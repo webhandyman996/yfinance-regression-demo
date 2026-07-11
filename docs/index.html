@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>yfinance 股票資料與回歸應用教學（Stock Data &amp; Regression Tutorial）</title>
+  <style>
+    :root {
+      --bg: #f7f3ea;
+      --panel: #fffef9;
+      --text: #1e1b18;
+      --muted: #5a5047;
+      --accent: #d96f32;
+      --accent-2: #1f7a8c;
+      --line: #e7dccd;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, #ffe6c6 0, transparent 25%),
+        radial-gradient(circle at 85% 15%, #cde9ef 0, transparent 23%),
+        linear-gradient(180deg, #fdf8ef 0%, #f5eee2 100%);
+      min-height: 100vh;
+    }
+    .container { width: min(1100px, 92vw); margin: 0 auto; padding: 2.5rem 0 4rem; }
+    .hero {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 2rem;
+    }
+    h1 { margin: 0; font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.25; }
+    .hero p { margin: 1rem 0 0; color: var(--muted); font-size: 1.05rem; }
+    .badge {
+      display: inline-block;
+      margin-bottom: 0.9rem;
+      background: #fff0e4;
+      color: #9b4c1f;
+      border: 1px solid #f4d0b8;
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    h2 { margin: 2.4rem 0 0.4rem; font-size: clamp(1.3rem, 2.3vw, 1.7rem); }
+    .section-desc { margin: 0 0 1rem; color: var(--muted); }
+    .nav { margin-top: 1.2rem; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .nav a {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.3rem 0.75rem;
+      background: #fff;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+    .card h3 { margin: 0 0 0.6rem; font-size: 1.02rem; color: var(--accent-2); }
+    .card p { margin: 0.6rem 0 0; color: var(--muted); line-height: 1.45; font-size: 0.92rem; }
+    .preview { width: 100%; border-radius: 10px; border: 1px solid var(--line); display: block; }
+    .preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.5rem; }
+    .preview-grid figure { margin: 0; }
+    .preview.small { width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+    .text-preview {
+      margin: 0;
+      background: #1e1b18;
+      color: #f7f3ea;
+      border-radius: 10px;
+      padding: 0.7rem 0.8rem;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .concept {
+      margin-top: 0.5rem;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: #4d4137;
+      background: #f6f1e7;
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+    }
+    .concept strong { color: var(--accent-2); }
+    .src-note { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+    .actions { margin-top: auto; padding-top: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .btn {
+      display: inline-block;
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: #fff;
+    }
+    .btn-src:hover { border-color: var(--accent-2); color: var(--accent-2); }
+    .btn-colab { background: var(--accent-2); color: #fff; border-color: var(--accent-2); }
+    .btn-colab:hover { filter: brightness(1.08); }
+    .hint {
+      margin-top: 1.2rem;
+      background: #fff;
+      border-left: 4px solid var(--accent);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      color: #4d4137;
+      font-size: 0.92rem;
+    }
+    .footer { margin-top: 2.5rem; font-size: 0.85rem; color: #7b6f65; }
+    .footer a { color: var(--accent-2); }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <span class="badge">機器學習</span>
+      <h1>yfinance 股票資料與回歸應用教學（Stock Data &amp; Regression Tutorial）</h1>
+      <p>點卡片可直接看結果圖，也可以查看原始碼或到 Colab 親自執行、修改程式碼。</p>
+      <nav class="nav">
+        <a href="#base">yfinance 基礎操作</a>
+        <a href="#advanced">線性回歸與股價預測</a>
+      </nav>
+    </section>
+
+    <section id="base">
+      <h2>yfinance 基礎操作（Basic Operations）</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>取得股票基本資料（Get Stock Data）</h3>
+          
+          <pre class="text-preview">股票名稱： Apple Inc.
+股票代號： AAPL
+股票價格： 315.32</pre>
+          <p>取得 AAPL 的基本資訊與過去一年歷史股價，純文字輸出。</p>
+          <p class="concept"><strong>核心概念：</strong>示範 yfinance 最基本的用法：用 Ticker 取得股票物件，讀取 .info 拿到基本資料、.history() 拿到歷史股價表格。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/BaseFunction/YFINACE_demo1_Getdata.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/bf1_getdata.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>選擇股票並繪製收盤價走勢圖（Select Stock & Draw Chart）</h3>
+          <img class="preview" src="results/bf2_drawchart_1.png" alt="選擇股票並繪製收盤價走勢圖 結果圖" loading="lazy" />
+          
+          <p>輸入 1-5 選擇股票（或自行輸入代號），畫出過去一年收盤價走勢圖。</p>
+          <p class="concept"><strong>核心概念：</strong>示範用 input() 做簡單的文字選單互動，讓使用者選擇要查詢的股票代號，再取資料畫圖。</p>
+          <p class="src-note">教學範例 2、3 內容相同，皆可參考。</p>
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/BaseFunction/YFINACE_demo2_DrawChart.py" target="_blank" rel="noopener">查看原始碼 1</a><a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/BaseFunction/YFINACE_demo3_SelectStock.py" target="_blank" rel="noopener">查看原始碼 2</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/bf2_drawchart.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>選擇股票與日期區間繪製走勢圖（Select Stock & Date Range）</h3>
+          <img class="preview" src="results/bf4_movingaverage_1.png" alt="選擇股票與日期區間繪製走勢圖 結果圖" loading="lazy" />
+          
+          <p>先選股票（1-5），再選時間區間（1-7），畫出對應區間的收盤價走勢圖。</p>
+          <p class="concept"><strong>核心概念：</strong>在選股票的基礎上，再加一層日期區間選單（1天到1年，或自行輸入起訖日期），示範多層互動選單的寫法。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/BaseFunction/YFINACE_demo4_SelectMovingaverage.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/bf4_movingaverage.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>收盤價／成交量／移動平均線（Close / Volume / Moving Average）</h3>
+          <div class="preview-grid"><figure><img class="preview small" src="results/bf5_multicurve_1.png" alt="收盤價／成交量／移動平均線 結果圖 1" loading="lazy" /></figure><figure><img class="preview small" src="results/bf5_multicurve_2.png" alt="收盤價／成交量／移動平均線 結果圖 2" loading="lazy" /></figure><figure><img class="preview small" src="results/bf5_multicurve_3.png" alt="收盤價／成交量／移動平均線 結果圖 3" loading="lazy" /></figure></div>
+          
+          <p>固定以 AAPL 為例，依序畫出收盤價、成交量、50日與200日移動平均線，共三張圖。</p>
+          <p class="concept"><strong>核心概念：</strong>移動平均線（Moving Average）是把過去 N 天的收盤價取平均，用來平滑短期波動、觀察長期趨勢；50日與200日均線的交叉常被當作買賣訊號的參考。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/BaseFunction/YFINAC_demo5_MultiCurve.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/bf5_multicurve.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="advanced">
+      <h2>線性回歸與股價預測（Linear Regression &amp; Price Prediction）</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>線性回歸手算示範：讀書時數 vs 考試分數（Linear Regression by Formula (1)）</h3>
+          <img class="preview" src="results/adv1_linreg1_1.png" alt="線性回歸手算示範：讀書時數 vs 考試分數 結果圖" loading="lazy" />
+          
+          <p>用簡單公式手動示範線性回歸怎麼算，不使用 sklearn。</p>
+          <p class="concept"><strong>核心概念：</strong>用最小平方法的公式直接算出斜率與截距，讓學生理解線性回歸「背後在做什麼」，而不是只會呼叫套件。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/AdvancedFunction/LinearRegressionDemo1.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/adv1_linreg1.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>線性回歸手算示範：炸雞次數 vs 體重增加（Linear Regression by Formula (2)）</h3>
+          <img class="preview" src="results/adv2_linreg2_1.png" alt="線性回歸手算示範：炸雞次數 vs 體重增加 結果圖" loading="lazy" />
+          
+          <p>換一組資料（炸雞次數與體重增加），再次手動計算回歸係數 b0、b1。</p>
+          <p class="concept"><strong>核心概念：</strong>同樣用最小平方法公式計算，並印出方程式 y = b1x + b0，讓學生比較不同資料集算出的係數意義。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/AdvancedFunction/LinearRegressionDemo2.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/adv2_linreg2.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>sklearn 線性回歸與 MSE 評估（Linear Regression with sklearn）</h3>
+          
+          <pre class="text-preview">預測結果： [[3.62707906]]
+均方誤差： 0.4410838438776215
+MSE： 0.4410838438776215</pre>
+          <p>改用 sklearn 的 LinearRegression 訓練模型，並計算 MSE 評估準確度。</p>
+          <p class="concept"><strong>核心概念：</strong>從手算公式進階到呼叫 sklearn 套件，示範同一件事套件化之後怎麼寫；並用 MSE 量化模型的預測誤差。純數值輸出，無圖表。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/AdvancedFunction/LinearRegressionDemo3.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/adv3_linreg3.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+        <article class="card">
+          <h3>應用實例：用線性回歸預測 AAPL 股價（Applied: Predicting AAPL Price）</h3>
+          <img class="preview" src="results/adv4_ml_1.png" alt="應用實例：用線性回歸預測 AAPL 股價 結果圖" loading="lazy" />
+          
+          <p>取得真實股價，做特徵工程，訓練線性回歸模型預測收盤價。</p>
+          <p class="concept"><strong>核心概念：</strong>把前面學到的線性回歸應用在真實資料：計算 5日/20日移動平均與 RSI 當作特徵，訓練模型預測收盤價，並畫出預測值與實際值的對照圖，是整個系列的綜合應用範例。</p>
+          
+          <div class="actions">
+            <a class="btn btn-src" href="https://github.com/webhandyman996/yfinance-regression-demo/blob/master/AdvancedFunction/machineLearning.py" target="_blank" rel="noopener">查看原始碼</a>
+            <a class="btn btn-colab" href="https://colab.research.google.com/github/webhandyman996/yfinance-regression-demo/blob/master/docs/notebooks/adv4_ml.ipynb" target="_blank" rel="noopener">在 Colab 開啟執行</a>
+          </div>
+        </article>
+      </div>
+      <div class="hint">部分程式執行時會在畫面下方跳出輸入框（例如選擇股票代號），依提示輸入即可；股價資料為即時抓取，每次執行結果會依當下市場狀況變化。</div>
+    </section>
+
+    <p class="footer">Repo: <a href="https://github.com/webhandyman996/yfinance-regression-demo" target="_blank" rel="noopener">webhandyman996/yfinance-regression-demo</a></p>
+  </main>
+</body>
+</html>
